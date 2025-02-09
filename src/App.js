@@ -1,3 +1,4 @@
+/* global google*/
 import React, { useState, useEffect } from "react";
 import {
   TextField,
@@ -15,6 +16,8 @@ import {
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import debounce from "lodash.debounce";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const containerStyle = {
   width: "100%",
@@ -36,9 +39,15 @@ const App = () => {
   const [optimizedOrder, setOptimizedOrder] = useState([]);
 
   const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: API_KEY, // Add your API Key here
+    googleMapsApiKey: API_KEY,
     libraries,
   });
+
+
+  useEffect(() => {
+    const defaultStart = { label: "Akola, Maharashtra, India", value: null };
+    setStart(defaultStart);
+  }, []);
 
   const fetchSuggestions = (inputValue, setOptions) => {
     if (!inputValue) {
@@ -70,16 +79,25 @@ const App = () => {
   );
 
   const handleShowPath = async () => {
-    if (!start || !end) return;
+    if (!start) return;
+
+    let destination = end?.label || waypoints[waypoints.length - 1]?.label;
+
+    if (!destination) {
+      toast.error("Please select add at least one waypoint.")
+      return;
+    }
 
     const directionsService = new google.maps.DirectionsService();
+    const waypointsToUse = waypoints.map((waypoint) => ({
+      location: waypoint.label,
+      stopover: true,
+    }));
+
     const result = await directionsService.route({
       origin: start.label,
-      destination: end.label,
-      waypoints: waypoints.map((waypoint) => ({
-        location: waypoint.label,
-        stopover: true,
-      })),
+      destination: destination,
+      waypoints: waypointsToUse,
       optimizeWaypoints: true, // Optimize waypoints for shortest travel time
       travelMode: google.maps.TravelMode.DRIVING,
     });
@@ -88,33 +106,45 @@ const App = () => {
 
     // Capture the optimized waypoint order
     if (result.routes[0].waypoint_order) {
+      toast.success("Path successfully found!");
       const orderedWaypoints = result.routes[0].waypoint_order.map(
         (index) => waypoints[index]
       );
-      setOptimizedOrder([start, ...orderedWaypoints, end]);
+      setOptimizedOrder([start, ...orderedWaypoints, { label: destination }]);
     }
   };
-
   const handleExportToPDF = () => {
     const doc = new jsPDF();
 
-    // Prepare the optimized travel sequence
-    const travelSequence = optimizedOrder.length
-      ? optimizedOrder
-      : [start, ...waypoints, end];
-    const tableData = travelSequence.map((location, index) => ({
-      label: `Stop ${index + 1}`,
-      value: location?.label,
-    }));
+    // Ensure we use the optimized order if available
+    let travelSequence = optimizedOrder.length > 0 ? optimizedOrder : [start, ...waypoints, end];
 
-    doc.text("Travel Plan", 10, 10);
+    // If the user has selected an explicit end location, ensure it's the last entry
+    if (end) {
+      travelSequence = optimizedOrder.length > 0 ? [...optimizedOrder.slice(0, -1), end] : [start, ...waypoints, end];
+    }
+
+
+    const tableData = travelSequence.map((location, index) => {
+      if (index === 0) {
+        return { label: "Start Location", value: location?.label || "Akola, Maharashtra, India" };
+      } else if (index === travelSequence.length - 1) {
+        return { label: "End Location", value: location?.label || "Last Village" };
+      } else {
+        return { label: `Stop ${index}`, value: location?.label };
+      }
+    });
+
+    // Generate PDF
+    toast.success("PDF Downloaded Successfully!")
+    doc.text("Optimized Travel Plan", 10, 10);
     doc.autoTable({
-      head: [["Sequence", "Location"]],
+      head: [["Label", "Location"]],
       body: tableData.map((row) => [row.label, row.value]),
     });
-    doc.save("travel_plan.pdf");
+    let filename = `travel_plan_${new Date().toJSON().slice(0, 10)}`;
+    doc.save(filename);
   };
-
   useEffect(() => {
     return () => {
       debouncedFetchStart.cancel();
@@ -124,8 +154,19 @@ const App = () => {
   }, []);
 
   return (
-    <Container>
-      <Typography variant="h4" gutterBottom>
+    <Container
+      sx={{
+        background: "aliceblue",
+        borderRadius: "8px",
+        padding: "20px",
+        boxShadow: "0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)",
+        // backgroundColor: "rgba(255, 255, 255, 0.6)",
+        WebkitBackdropFilter: "blur(10px)",
+        color: "white",
+      }}
+    >
+      <ToastContainer position="top-left" autoClose={3000} />
+      <Typography variant="h4" gutterBottom color="primary" fontWeight={"bold"} textAlign={"center"}>
         Shorted Path Finder
       </Typography>
 
@@ -135,8 +176,9 @@ const App = () => {
           getOptionLabel={(option) => option.label}
           onInputChange={(e, value) => debouncedFetchStart(value)}
           onChange={(e, value) => setStart(value)}
+          value={start}
           renderInput={(params) => (
-            <TextField {...params} label="Start Location" />
+            <TextField {...params} label="Start Location" disabled />
           )}
         />
       </Box>
@@ -148,7 +190,7 @@ const App = () => {
           onInputChange={(e, value) => debouncedFetchEnd(value)}
           onChange={(e, value) => setEnd(value)}
           renderInput={(params) => (
-            <TextField {...params} label="End Location" />
+            <TextField {...params} label="End Location (Optional)" />
           )}
         />
       </Box>
@@ -160,7 +202,7 @@ const App = () => {
           getOptionLabel={(option) => option.label}
           onInputChange={(e, value) => debouncedFetchWaypoints(value)}
           onChange={(e, value) => setWaypoints(value || [])}
-          renderInput={(params) => <TextField {...params} label="Waypoints" />}
+          renderInput={(params) => <TextField {...params} label="Villages" />}
         />
       </Box>
 
