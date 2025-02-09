@@ -1,14 +1,14 @@
 {
   "files": {
     "main.css": "/shortest-path-finder/static/css/main.9f6d6f65.css",
-    "main.js": "/shortest-path-finder/static/js/main.51424c20.js",
+    "main.js": "/shortest-path-finder/static/js/main.b7f7462b.js",
     "static/js/239.696cdea7.chunk.js": "/shortest-path-finder/static/js/239.696cdea7.chunk.js",
     "static/js/213.ebf66ddc.chunk.js": "/shortest-path-finder/static/js/213.ebf66ddc.chunk.js",
     "static/js/455.a1a50ff9.chunk.js": "/shortest-path-finder/static/js/455.a1a50ff9.chunk.js",
     "static/js/488.8210cf37.chunk.js": "/shortest-path-finder/static/js/488.8210cf37.chunk.js",
     "index.html": "/shortest-path-finder/index.html",
     "main.9f6d6f65.css.map": "/shortest-path-finder/static/css/main.9f6d6f65.css.map",
-    "main.51424c20.js.map": "/shortest-path-finder/static/js/main.51424c20.js.map",
+    "main.b7f7462b.js.map": "/shortest-path-finder/static/js/main.b7f7462b.js.map",
     "239.696cdea7.chunk.js.map": "/shortest-path-finder/static/js/239.696cdea7.chunk.js.map",
     "213.ebf66ddc.chunk.js.map": "/shortest-path-finder/static/js/213.ebf66ddc.chunk.js.map",
     "455.a1a50ff9.chunk.js.map": "/shortest-path-finder/static/js/455.a1a50ff9.chunk.js.map",
@@ -16,6 +16,6 @@
   },
   "entrypoints": [
     "static/css/main.9f6d6f65.css",
-    "static/js/main.51424c20.js"
+    "static/js/main.b7f7462b.js"
   ]
 }
